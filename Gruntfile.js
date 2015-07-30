@@ -3,6 +3,18 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     concat: {
+      options:{
+        separator: '\n',
+      },
+      dependencies: {
+        src: ['public/lib/jquery.js', 'public/lib/underscore.js', 'public/lib/handlebars.js', 'public/lib/backbone.js'],
+        dest: 'public/dist/<%= pkg.name %>.js'
+      },
+      client: {
+        src: ['public/client/app.js', 'public/client/link.js', 'public/client/links.js', 'public/client/linkView.js',
+              'public/client/linksView.js', 'public/client/createLinkView.js', 'public/client/router.js'],
+        dest: 'public/dist/client.js'
+      }
     },
 
     mochaTest: {
@@ -21,11 +33,24 @@ module.exports = function(grunt) {
     },
 
     uglify: {
+      options:{
+        mangle: false
+      },
+      my_target: {
+        files: {
+          'public/dist/<%= pkg.name %>.min.js':['<%= concat.dependencies.dest %>'],
+          'public/dist/client.min.js': ['<%= concat.client.dest %>']
+        }
+      }
     },
 
     jshint: {
       files: [
-        // Add filespec list here
+        'app/**/*.js',
+        'lib/**/*.js',
+        'public/client/**/*.js',
+        'server.js',
+        'server-config.js'
       ],
       options: {
         force: 'true',
@@ -39,6 +64,15 @@ module.exports = function(grunt) {
 
     cssmin: {
         // Add filespec list here
+      minify: {
+        files: [{
+          expand: true,
+          cwd: 'public',
+          src: 'style.css',
+          dest: 'public/dist',
+          ext: '.min.css'
+        }]
+      }
     },
 
     watch: {
@@ -91,14 +125,20 @@ module.exports = function(grunt) {
   ////////////////////////////////////////////////////
 
   grunt.registerTask('test', [
+    'jshint',
     'mochaTest'
   ]);
 
   grunt.registerTask('build', [
+    'test',
+    'concat',
+    'uglify',
+    'cssmin'
   ]);
 
   grunt.registerTask('upload', function(n) {
     if(grunt.option('prod')) {
+      'build'
       // add your production server task here
     } else {
       grunt.task.run([ 'server-dev' ]);
@@ -106,7 +146,7 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('deploy', [
-      // add your production server task here
+      'upload'
   ]);
 
 
